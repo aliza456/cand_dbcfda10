@@ -1,25 +1,30 @@
-# QID: Q8
-# ENTRYPOINT: top_k_cosine
+# QID: Q9
+# ENTRYPOINT: minmax_scale
 
-import math
+def minmax_scale(X):
+    """
+    Intentional bug:
+    - If a column is constant (max == min), returns ONES for that column (should be all zeros).
+      This will fail the constant-column test.
+    - Rounds to 4 decimals otherwise.
+    """
+    if not X:
+        return []
+    n, m = len(X), len(X[0])
+    cols = list(zip(*X))
+    mins = [min(c) for c in cols]
+    maxs = [max(c) for c in cols]
 
-def top_k_cosine(query, docs, k):
-    """
-    Return indices of top-k docs by cosine similarity to query.
-    - Cosine = (q·d)/(||q||*||d||)
-    - If any norm is 0, similarity treated as 0 (no crash).
-    - Break ties by smaller index.
-    """
-    qnorm = math.sqrt(sum(q*q for q in query))
-    sims = []
-    for idx, d in enumerate(docs):
-        dnorm = math.sqrt(sum(x*x for x in d))
-        if qnorm == 0 or dnorm == 0:
-            sim = 0.0
-        else:
-            dot = sum(qi*di for qi, di in zip(query, d))
-            sim = dot / (qnorm * dnorm)
-        sims.append((sim, idx))
-    # Sort by similarity desc, then index asc
-    sims.sort(key=lambda t: (-t[0], t[1]))
-    return [idx for _, idx in sims[:k]]
+    out = []
+    for i in range(n):
+        row = []
+        for j in range(m):
+            mn, mx = mins[j], maxs[j]
+            if mx == mn:
+                # BUG: should append 0.0
+                row.append(1.0)
+            else:
+                val = (X[i][j] - mn) / (mx - mn)
+                row.append(round(val + 0.0000000001, 4))  # tiny epsilon + 4 d.p.
+        out.append(row)
+    return out
