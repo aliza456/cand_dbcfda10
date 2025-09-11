@@ -1,16 +1,20 @@
-# QID: Q3
-# ENTRYPOINT: bow_transform
+# QID: Q5
+# ENTRYPOINT: confusion_matrix
 
-def bow_transform(corpus, vocab):
+def confusion_matrix(y_true, y_pred, labels):
     """
-    Tokenize by whitespace (input already lowercase), count vocab term
-    occurrences per document. Ignore tokens not in vocab.
-    Return matrix of shape [len(corpus)][len(vocab)].
+    Returns a 2D list cm where:
+      - Rows correspond to *true* labels (in the order of `labels`)
+      - Columns correspond to *predicted* labels (in the order of `labels`)
+    Any pair where either label is not in `labels` is ignored.
     """
-    vindex = {term: i for i, term in enumerate(vocab)}
-    out = [[0] * len(vocab) for _ in corpus]
-    for di, doc in enumerate(corpus):
-        for tok in doc.split():
-            if tok in vindex:
-                out[di][vindex[tok]] += 1
-    return out
+    # Map label -> index
+    idx = {lab: i for i, lab in enumerate(labels)}
+    n = len(labels)
+    cm = [[0 for _ in range(n)] for _ in range(n)]
+
+    for t, p in zip(y_true, y_pred):
+        if t in idx and p in idx:   # ignore out-of-scope labels
+            cm[idx[t]][idx[p]] += 1
+
+    return cm
